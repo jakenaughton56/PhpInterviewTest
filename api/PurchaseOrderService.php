@@ -34,13 +34,31 @@ class PurchaseOrderService
 
 		// Get all the returned data.
 		foreach ($promises as $promise) {
-			$response = $promise->wait();
+			$data = $promise->wait();
+			$response = json_decode($data);
 			$responses[] = $response;
 		}
 		
-		return $response;
+		return $responses;
 	}
-	
+
+	public function calculateTotals(array $ids) {
+		$purchaseOrders = $this->getPurchaseOrders($ids);
+		$totals = [];
+
+		foreach($purchaseOrders as $purchaseOrder) {
+			$purchaseOrderProducts =  $purchaseOrder->data->PurchaseOrderProduct;
+			foreach ($purchaseOrderProducts as $purchaseOrderProduct) {
+				if(!isset($totals[$purchaseOrderProduct->product_type_id])) {
+			        $totals[$purchaseOrderProduct->product_type_id] = $purchaseOrderProduct->unit_quantity_initial * $purchaseOrderProduct->Product->weight;
+			    } else {
+			    	$totals[$purchaseOrderProduct->product_type_id] += $purchaseOrderProduct->unit_quantity_initial * $purchaseOrderProduct->Product->weight;
+			    }
+			}
+		}
+		return $totals;
+	}
+
 }
 $purchaseOrderService = new PurchaseOrderService();
-$request = $purchaseOrderService->getPurchaseOrders([2344, 2345, 2346]);
+$request = $purchaseOrderService->calculateTotals([2344, 2345, 2346]);
