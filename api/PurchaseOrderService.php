@@ -8,9 +8,11 @@ use GuzzleHttp\Psr7\Request;
 class PurchaseOrderService 
 {
 
-	public function getPurchaseOrder($id) {
-
+	public function getPurchaseOrders(array $ids) {
+		$promises = [];
+		$responses = [];
 		$credentials = base64_encode('interview-test@cartoncloud.com.au:test123456');
+
 		$client = new GuzzleHttp\Client(
 			[
 	            'headers' => [
@@ -19,15 +21,26 @@ class PurchaseOrderService
 	        ]
 		);
 
-		$request = new \GuzzleHttp\Psr7\Request('GET', 'https://api.cartoncloud.com.au/CartonCloud_Demo/PurchaseOrders/'. $id . '?version=5&associated=true');
-		$promise = $client->sendAsync($request)->then(function ($response) {
-		    echo 'I completed! ' . $response->getBody();
-		});
-		$promise->wait();
-		return '';
+		// Start all the request calls asynchronously
+		foreach ($ids as $id) {
+			$request = new \GuzzleHttp\Psr7\Request('GET', 'https://api.cartoncloud.com.au/CartonCloud_Demo/PurchaseOrders/'. $id . '?version=5&associated=true');
+			$promise = $client->sendAsync($request)->then(function ($response) {
+			    return $response->getBody();
+			}, function ($exception) {
+		    	return $exception->getMessage();
+			});
+			$promises[] = $promise;
+		}
+
+		// Get all the returned data.
+		foreach ($promises as $promise) {
+			$response = $promise->wait();
+			$responses[] = $response;
+		}
 		
+		return $response;
 	}
+	
 }
 $purchaseOrderService = new PurchaseOrderService();
-$request = $purchaseOrderService->getPurchaseOrder(2344);
-// var_dump($request);
+$request = $purchaseOrderService->getPurchaseOrders([2344, 2345, 2346]);
