@@ -1,12 +1,43 @@
 <?php
+namespace API\Handler;
 
-require 'vendor/autoload.php';
+require '../vendor/autoload.php';
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Psr7\Request;
 
-class RestAPIHandler 
+class PurchaseOrders
 {
+	const CCCREDENTIALS = 'interview-test@cartoncloud.com.au:test123456';
+	const WEIGHTPRODUCTS = [1,3];
+	const VOLUMEPRODUCTS = [2];
+
+	/**
+	 * Retrieve and caclulate all purchase orders
+	 *
+     * @param array $ids
+     *
+     * @return array $totals
+     */
+	public function calculateOrders(array $ids) {
+		$totals = [];
+
+		$purchaseOrders = $this->getOrders($ids);
+
+		foreach($purchaseOrders as $purchaseOrder) {
+			$purchaseOrderProducts =  $purchaseOrder->data->PurchaseOrderProduct;
+			foreach ($purchaseOrderProducts as $purchaseOrderProduct) {
+				if(in_array($purchaseOrderProduct->product_type_id, self::WEIGHTPRODUCTS)) {
+					$this->calculateWeightProduct($purchaseOrderProduct, $totals);
+				} else if (in_array($purchaseOrderProduct->product_type_id, self::VOLUMEPRODUCTS)) {
+					$this->calculateVolumeProduct($purchaseOrderProduct, $totals);
+				} else {
+					// Skip, unknown product type
+				}
+			}
+		}
+		return $totals;
+	}
 
 	/**
 	 * Retrieve purchase orders from Carton Cloud API
@@ -15,12 +46,12 @@ class RestAPIHandler
      *
      * @return array $responses
      */
-	public function getPurchaseOrders(array $ids) {
+	private function getOrders(array $ids) {
 		$promises = [];
 		$responses = [];
-		$credentials = base64_encode('interview-test@cartoncloud.com.au:test123456');
+		$credentials = base64_encode(self::CCCREDENTIALS);
 
-		$client = new GuzzleHttp\Client(
+		$client = new Client(
 			[
 	            'headers' => [
 	                'Authorization' => 'Basic ' . $credentials,
@@ -30,7 +61,7 @@ class RestAPIHandler
 
 		// Start all the request calls asynchronously
 		foreach ($ids as $id) {
-			$request = new \GuzzleHttp\Psr7\Request('GET', 'https://api.cartoncloud.com.au/CartonCloud_Demo/PurchaseOrders/'. $id . '?version=5&associated=true');
+			$request = new Request('GET', 'https://api.cartoncloud.com.au/CartonCloud_Demo/PurchaseOrders/'. $id . '?version=5&associated=true');
 			$promise = $client->sendAsync($request)->then(function ($response) {
 			    return $response->getBody();
 			}, function ($exception) {
@@ -50,39 +81,10 @@ class RestAPIHandler
 	}
 
 	/**
-	 * Retrieve and caclulate all purchase orders
-	 *
-     * @param array $ids
-     *
-     * @return array $totals
-     */
-	public function calculatePurchaseOrders(array $ids) {
-		$totals = [];
-		$weightProducts = [1,3];
-		$volumeProducts = [2];
-
-		$purchaseOrders = $this->getPurchaseOrders($ids);
-
-		foreach($purchaseOrders as $purchaseOrder) {
-			$purchaseOrderProducts =  $purchaseOrder->data->PurchaseOrderProduct;
-			foreach ($purchaseOrderProducts as $purchaseOrderProduct) {
-				if(in_array($purchaseOrderProduct->product_type_id, $weightProducts)) {
-					$this->calculateWeightProduct($purchaseOrderProduct, $totals);
-				} else if (in_array($purchaseOrderProduct->product_type_id, $volumeProducts)) {
-					$this->calculateVolumeProduct($purchaseOrderProduct, $totals);
-				} else {
-					// Skip, unknown product type
-				}
-			}
-		}
-		return $totals;
-	}
-
-	/**
 	 * @param stdClass $purchaseOrderProduct
      * @param array &$totals
      */
-	public function calculateWeightProduct(stdClass $purchaseOrderProduct, array &$totals) {
+	private function calculateWeightProduct(\stdClass $purchaseOrderProduct, array &$totals) {
 		$totalWeight = $purchaseOrderProduct->unit_quantity_initial * $purchaseOrderProduct->Product->weight;
 
 		if(!isset($totals[$purchaseOrderProduct->product_type_id])) {
@@ -96,7 +98,7 @@ class RestAPIHandler
 	 * @param stdClass $purchaseOrderProduct
      * @param array &$totals
      */
-	public function calculateVolumeProduct(stdClass $purchaseOrderProduct, array &$totals) {
+	private function calculateVolumeProduct(\stdClass $purchaseOrderProduct, array &$totals) {
 		$totalVolume = $purchaseOrderProduct->unit_quantity_initial * $purchaseOrderProduct->Product->volume;
 
 		if(!isset($totals[$purchaseOrderProduct->product_type_id])) {
