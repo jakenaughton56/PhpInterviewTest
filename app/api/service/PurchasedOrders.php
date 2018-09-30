@@ -41,6 +41,7 @@ echo json_encode($jsonObject);
 // This Code would be used to achieve the total as shown in the test requirements:
 // "total": 25.0
 // As it is impossible to maintain the decimal point with json encode (using a float variable.)
+// Chose not to use this as 25.0 is exactly the same as 25 and it is too ugly
 
 
 // $jsonStr = '{"result":[';

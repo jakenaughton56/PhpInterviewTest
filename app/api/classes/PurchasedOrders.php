@@ -106,7 +106,6 @@ class PurchasedOrders
 	    	$productTotals[$productTypeId] += $unitAmount;
 	    }
 	}
-
 }
 
 ?>

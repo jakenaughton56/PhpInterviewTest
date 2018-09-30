@@ -1,4 +1,4 @@
-# Assumption: This project will be run on a Apache server
+# Big assumption: This project will be run on a Apache server
 Options +SymLinksIfOwnerMatch 
 RewriteEngine On 
 RewriteCond %{REQUEST_FILENAME} !-f 
