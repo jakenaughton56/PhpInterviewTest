@@ -1,5 +1,5 @@
 <?php
-namespace API\Handler;
+namespace API\Classes;
 
 require dirname(dirname(dirname(dirname(__FILE__)))) . '/vendor/autoload.php';
 use GuzzleHttp\Client;
@@ -9,6 +9,9 @@ use GuzzleHttp\Psr7\Request;
 class PurchasedOrders
 {
 	const CCCREDENTIALS = 'interview-test@cartoncloud.com.au:test123456';
+	const CCAPIURLSTART = 'https://api.cartoncloud.com.au/CartonCloud_Demo/PurchaseOrders/';
+	const CCAPIURLFINISH = '?version=5&associated=true';
+	const ERROR = 'ERROR';
 	const WEIGHTPRODUCTS = [1,3];
 	const VOLUMEPRODUCTS = [2];
 
@@ -24,7 +27,7 @@ class PurchasedOrders
 		$purchaseOrders = $this->getOrders($ids);
 
 		foreach($purchaseOrders as $purchaseOrder) {
-			if($purchaseOrder->info == "ERROR"){
+			if($purchaseOrder->info == self::ERROR){
 				// Skip, no data was available for order
 				continue;
 			}
@@ -67,7 +70,7 @@ class PurchasedOrders
 
 		// Start all the request calls asynchronously
 		foreach ($ids as $id) {
-			$request = new Request('GET', 'https://api.cartoncloud.com.au/CartonCloud_Demo/PurchaseOrders/' . $id . '?version=5&associated=true');
+			$request = new Request('GET', self::CCAPIURLSTART . $id . self::CCAPIURLFINISH);
 			$promise = $client->sendAsync($request)->then(function ($response) {
 			    return $response->getBody();
 			}, function ($exception) {
@@ -81,7 +84,7 @@ class PurchasedOrders
 			$data = $promise->wait();
 			if(is_string($data)) {
 				$response = new \stdClass();
-				$response->info = "ERROR";
+				$response->info = self::ERROR;
 				$responses[] = $response;
 			} else {
 				$response = json_decode($data);	

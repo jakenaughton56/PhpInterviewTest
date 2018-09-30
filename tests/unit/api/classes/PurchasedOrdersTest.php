@@ -1,6 +1,6 @@
 <?php
 
-require dirname(dirname(dirname(__FILE__))) . '/app/api/handler/PurchasedOrders.php';
+require dirname(dirname(dirname(dirname(dirname(__FILE__))))) . '/app/api/classes/PurchasedOrders.php';
 use PHPUnit\Framework\TestCase;
 
 class PuchasedOrdersTest extends TestCase
@@ -8,7 +8,7 @@ class PuchasedOrdersTest extends TestCase
 	protected $puchasedOrders;
 
 	public function setUp() {
-		$this->puchasedOrders = new API\Handler\PurchasedOrders();
+		$this->puchasedOrders = new API\Classes\PurchasedOrders();
 	}
 
 	public function testCalculateWeightProductEmptyArray() {

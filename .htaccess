@@ -1,0 +1,6 @@
+# Assumption: This project will be run on a Apache server
+Options +SymLinksIfOwnerMatch 
+RewriteEngine On 
+RewriteCond %{REQUEST_FILENAME} !-f 
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule test /app/api/service/PurchasedOrders.php [L]
